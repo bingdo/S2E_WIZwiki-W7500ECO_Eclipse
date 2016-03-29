@@ -21,7 +21,10 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "W7500x.h"
-
+#include "common.h"
+#include "timerHandler.h"
+#include "uartHandler.h"
+#include "extiHandler.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -105,8 +108,10 @@ void SSP1_Handler(void)
   * @param  None
   * @retval None
   */
-//void UART0_Handler(void)
-//{}
+void UART0_Handler(void)
+{
+	S2E_UART_IRQ_Handler(UART0);
+}
 
 
 /**
@@ -114,8 +119,10 @@ void SSP1_Handler(void)
   * @param  None
   * @retval None
   */
-//void UART1_Handler(void)
-//{}
+void UART1_Handler(void)
+{
+	S2E_UART_IRQ_Handler(UART1);
+}
 
 
 /**
@@ -123,8 +130,10 @@ void SSP1_Handler(void)
   * @param  None
   * @retval None
   */
-//void UART2_Handler(void)
-//{}
+void UART2_Handler(void)
+{
+	S2E_UART_IRQ_Handler(UART2);
+}
 
 
 /**
@@ -195,8 +204,10 @@ void DMA_Handler(void)
   * @param  None
   * @retval None
   */
-//void DUALTIMER0_Handler(void)
-//{}
+void DUALTIMER0_Handler(void)
+{
+	Timer_IRQ_Handler();
+}
 
 
 /**
@@ -293,8 +304,10 @@ void WZTOE_Handler(void)
   * @param  None
   * @retval None
   */
-//void EXTI_Handler(void)
-//{}
+void EXTI_Handler(void)
+{
+	Exti_IRQ_Handler();
+}
 
 
 

@@ -29,21 +29,23 @@ int addr_to_page(uint32_t addr)
 
 void erase_flash_page(uint32_t page_addr)
 {
+	__disable_irq();
     DO_IAP(IAP_ERAS_SECT,page_addr,0,0);
+	__enable_irq();
+}
+
+void erase_flash_block(uint32_t block_addr)
+{
+	__disable_irq();
+    DO_IAP(IAP_ERAS_BLCK,block_addr,0,0);
+	__enable_irq();
 }
 
 int write_flash(uint32_t addr, uint8_t *data, uint32_t data_len)
 {
-
-	if (data_len >= FLASH_PAGE_SIZE)
-	{
-		DO_IAP(IAP_PROG,addr,(unsigned char*)data,FLASH_PAGE_SIZE);
-		DO_IAP(IAP_PROG,(addr+FLASH_PAGE_SIZE),(unsigned char*)&data[FLASH_PAGE_SIZE],(data_len-FLASH_PAGE_SIZE));
-	}
-	else
-	{
-		DO_IAP(IAP_PROG,addr,(unsigned char*)data,data_len);
-	}
+	__disable_irq();
+	DO_IAP(IAP_PROG,addr,(unsigned char*)data,data_len);
+	__enable_irq();
 
 	return data_len;
 }
@@ -71,8 +73,11 @@ void save_data(uint8_t *data, uint32_t data_len, uint16_t block_number)
 
 	if(block_number == 1) {
 #if !defined(MULTIFLASH_ENABLE)
-		for(i = 0 ; i < FLASH_APP_PAGE; i++) {
-			erase_flash_page(APP_BASE + (FLASH_PAGE_SIZE * i));
+		//for(i = 0 ; i < FLASH_APP_PAGE; i++) {
+		//	erase_flash_page(APP_BASE + (FLASH_PAGE_SIZE * i));
+		//}
+		for(i = 0 ; i < 24; i++) {
+			erase_flash_block(APP_BASE + (BLOCK_SIZE * i));
 		}
 #else
 		for(i = 0 ; i < flash.flash_app_page; i++) {
@@ -84,6 +89,7 @@ void save_data(uint8_t *data, uint32_t data_len, uint16_t block_number)
 	//DBG_PRINT(INFO_DBG, "#");
 	cnt += data_len;
 
+#if 0
 	if(data_len < TFTP_BLK_SIZE) {
 		memset(data + data_len, 0xff, TFTP_BLK_SIZE - data_len);
 		write_flash((uint32_t)g_write_point, data, TFTP_BLK_SIZE);
@@ -95,7 +101,9 @@ void save_data(uint8_t *data, uint32_t data_len, uint16_t block_number)
 #endif
 		cnt = 0;
 	}
-	else {
+	else
+#endif
+	{
 		write_flash((uint32_t)g_write_point, data, data_len);
 		g_write_point += data_len;
 	}
@@ -142,8 +150,6 @@ void DO_IAP( uint32_t id, uint32_t dst_addr, uint8_t* src_addr, uint32_t size)
 {
     uint32_t temp_interrupt;
 
-	__disable_irq();
-
     // Backup Interrupt Set Pending Register
     temp_interrupt = (NVIC->ISPR[0]);
     (NVIC->ISPR[0]) = (uint32_t)0xFFFFFFFF;
@@ -153,6 +159,4 @@ void DO_IAP( uint32_t id, uint32_t dst_addr, uint8_t* src_addr, uint32_t size)
 
     // Restore Interrupt Set Pending Register
     (NVIC->ISPR[0]) = temp_interrupt;
-
-	__enable_irq();
 }
