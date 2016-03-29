@@ -12,8 +12,6 @@
 #include "DHCP/dhcp.h"
 #include "DNS/dns.h"
 
-static uint32_t mill_sec = 0;
-
 uint8_t nagle_flag = 0;
 uint32_t nagle_time = 0;
 uint32_t uart_recv_count = 0;
@@ -44,7 +42,8 @@ static uint32_t sec_cnt = 0;
 
 extern bool Board_factory_get(void);
 
-void DUALTIMER0_Handler(void)
+//void DUALTIMER0_Handler(void)
+void Timer_IRQ_Handler(void)
 {
 	struct __network_info *net = (struct __network_info *)get_S2E_Packet_pointer()->network_info;
 	struct __options *option = (struct __options *)&(get_S2E_Packet_pointer()->options);
@@ -111,7 +110,7 @@ void DUALTIMER0_Handler(void)
 
         /* Second Process */
         if((mill_cnt % 1000) == 0) {
-            LED_Toggle(LED2);
+            LED_Toggle(LED1);
             mill_cnt = 0;
             sec_cnt++;
 
@@ -163,19 +162,6 @@ void DUALTIMER0_Handler(void)
 				}
 			}
         }
-
-        mill_sec++;
-
-		//if((mill_sec % 1000) == 0) {
-		//	LED_Toggle(LED1);
-		//	LED_Toggle(LED2);
-		//}
-
-		if((mill_sec % 1000) == 0) {
-			mill_sec = 0;
-			tftp_timeout_handler();
-		}
-
 	}
 }
 

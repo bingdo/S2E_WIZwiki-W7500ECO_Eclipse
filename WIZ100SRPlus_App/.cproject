@@ -82,6 +82,7 @@
 									<listOptionValue builtIn="false" value="TRACE"/>
 									<listOptionValue builtIn="false" value="USE_STDPERIPH_DRIVER"/>
 									<listOptionValue builtIn="false" value="OS_USE_TRACE_SEMIHOSTING_DEBUG"/>
+									<listOptionValue builtIn="false" value="CORTEX_M0"/>
 								</option>
 								<inputType id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.1845606962" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input"/>
 							</tool>
@@ -220,6 +221,17 @@
 									<listOptionValue builtIn="false" value="&quot;../system/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/cmsis&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/W7500x&quot;"/>
+									<listOptionValue builtIn="false" value="../src"/>
+									<listOptionValue builtIn="false" value="../src/ATcmd"/>
+									<listOptionValue builtIn="false" value="../src/ATcmd/library"/>
+									<listOptionValue builtIn="false" value="../src/callback"/>
+									<listOptionValue builtIn="false" value="../src/Configuration"/>
+									<listOptionValue builtIn="false" value="../src/ioLibrary/Ethernet"/>
+									<listOptionValue builtIn="false" value="../src/ioLibrary/Internet"/>
+									<listOptionValue builtIn="false" value="../src/ioLibrary/MDIO"/>
+									<listOptionValue builtIn="false" value="../src/ioLibrary/Internet/TFTP"/>
+									<listOptionValue builtIn="false" value="../src/PlatformHandler"/>
+									<listOptionValue builtIn="false" value="../src/S2E"/>
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs.170212863" name="Defined symbols (-D)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="OS_USE_TRACE_SEMIHOSTING_STDOUT"/>
@@ -290,7 +302,7 @@
 					</folderInfo>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="system"/>
+						<entry excluding="src/W7500x/W7500x_dma.c|src/W7500x/W7500x_pwm.c|src/W7500x/W7500x_rtc.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="system"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

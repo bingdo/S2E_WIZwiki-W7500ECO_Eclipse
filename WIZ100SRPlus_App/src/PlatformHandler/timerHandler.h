@@ -9,7 +9,7 @@ extern uint8_t nagle_flag;
 extern uint32_t nagle_time;
 extern uint32_t uart_recv_count;
 
-extern uint8_t reconn_flag;	
+extern uint8_t reconn_flag;
 extern uint32_t reconn_time;
 
 extern uint8_t inactive_flag;
@@ -30,5 +30,7 @@ extern uint32_t auth_time;
 
 void Timer0_Configuration(void);
 void delay_cnt(uint32_t count);
+
+void Timer_IRQ_Handler(void);
 
 #endif
