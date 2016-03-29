@@ -108,12 +108,15 @@ int main()
     CRG_PLL_InputFrequencySelect(CRG_OCLK);
 
     /* Clock */
-     *(volatile uint32_t *)(0x41001014) = 0x000C0200; // 48MHz
+    *(volatile uint32_t *)(0x41001014) = 0x00060100; // 48MHz
+    //*(volatile uint32_t *)(0x41001014) = 0x000C0200; // 48MHz
     //*(volatile uint32_t *)(0x41001014) = 0x00050200; // 20MHz, Default
     //*(volatile uint32_t *)(0x41001014) = 0x00040200; // 16MHz
 
     /* Set System init */
     SystemInit();
+
+	//__enable_irq();
 
     /* UART2 Init */
     S_UART_Init(115200);
@@ -248,9 +251,6 @@ int main()
 	atc_init(&rxring, &txring);
 
 	op_mode = OP_DATA;
-
-	//TFTP_init(SOCK_TFTP, socket_buf);
-
 	while (1) {
 		if(op_mode == OP_COMMAND) {			// Command Mode
 			atc_run();
@@ -259,12 +259,7 @@ int main()
 			s2e_run(SOCK_DATA);
 		}
 
-		if(g_op_mode == NORMAL_MODE) {
-			do_udp_config(SOCK_CONFIG);
-		} else {
-			if(TFTP_run() != TFTP_PROGRESS)
-				g_op_mode = NORMAL_MODE;
-		}
+		do_udp_config(SOCK_CONFIG);
 
 #if defined(F_APP_DHCP)
 		if(value->options.dhcp_use)
