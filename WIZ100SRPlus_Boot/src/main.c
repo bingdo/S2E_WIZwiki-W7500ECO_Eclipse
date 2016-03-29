@@ -36,9 +36,6 @@
 #include "extiHandler.h"
 #include "DHCP/dhcp.h"
 #include "DNS/dns.h"
-#include "S2E.h"
-#include "dhcp_cb.h"
-#include "atcmd.h"
 
 /* Private typedef -----------------------------------------------------------*/
 UART_InitTypeDef UART_InitStructure;
@@ -50,7 +47,7 @@ UART_InitTypeDef UART_InitStructure;
 ///////////////////////////////////////
 // Debugging Message Printout enable //
 ///////////////////////////////////////
-#define _MAIN_DEBUG_
+//#define _MAIN_DEBUG_
 //#define F_APP_DHCP
 //#define F_APP_DNS
 
@@ -59,6 +56,17 @@ UART_InitTypeDef UART_InitStructure;
 ///////////////////////////
 #define VER_H		1
 #define VER_L		00
+
+/* Private typedef -----------------------------------------------------------*/
+
+// Define for Interrupt Vector Table Remap
+#define BOOT_VEC_BACK_ADDR 		(DEVICE_APP_MAIN_ADDR - SECT_SIZE)
+
+/* Private function prototypes -----------------------------------------------*/
+
+// Functions for Interrupt Vector Table Remap
+void Copy_Interrupt_VectorTable(uint32_t start_addr);
+void Backup_Boot_Interrupt_VectorTable(void);
 
 /* Private function prototypes -----------------------------------------------*/
 void delay(__IO uint32_t milliseconds); //Notice: used ioLibray
@@ -78,18 +86,20 @@ uint8_t run_dns = 1;
 uint8_t op_mode;
 uint8_t factory_flag = 0;
 
-uint8_t socket_buf[2048];
+uint8_t socket_buf[MAX_MTU_SIZE];
 uint8_t g_op_mode = NORMAL_MODE;
+
+uint8_t g_flash_vector_area[0x100];
 
 void application_jump(void)
 {
 	/* Set Stack Pointer */
-	asm volatile("ldr r0, =0x0000F000");
+	asm volatile("ldr r0, =0x00008000");
 	asm volatile("ldr r0, [r0]");
 	asm volatile("mov sp, r0");
 
 	/* Jump to Application ResetISR */
-	asm volatile("ldr r0, =0x0000F004");
+	asm volatile("ldr r0, =0x00008004");
 	asm volatile("ldr r0, [r0]");
 	asm volatile("mov pc, r0");
 }
@@ -156,17 +166,32 @@ int main()
 #if defined(F_APP_DNS)
 	uint8_t dns_server_ip[4];
 #endif
+	int i;
 
     /* External Clock */
     CRG_PLL_InputFrequencySelect(CRG_OCLK);
 
     /* Clock */
-     *(volatile uint32_t *)(0x41001014) = 0x000C0200; // 48MHz
+    *(volatile uint32_t *)(0x41001014) = 0x00060100; // 48MHz
+    //*(volatile uint32_t *)(0x41001014) = 0x000C0200; // 48MHz
     //*(volatile uint32_t *)(0x41001014) = 0x00050200; // 20MHz, Default
     //*(volatile uint32_t *)(0x41001014) = 0x00040200; // 16MHz
 
     /* Set System init */
     SystemInit();
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+	// W7500x ISR: Interrupt Vector Table Remap (Custom)
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	if (*(uint32_t*)BOOT_VEC_BACK_ADDR == 0xFFFFFFFF) // after boot code first write
+	{
+		Backup_Boot_Interrupt_VectorTable();
+	}
+	else
+	{
+		Copy_Interrupt_VectorTable(BOOT_VEC_BACK_ADDR);
+	}
 
     /* UART2 Init */
     S_UART_Init(115200);
@@ -235,7 +260,7 @@ int main()
         printf(".");  
         delay(500);
     }
-    printf("PHY is linked. \r\n");  
+    //printf("PHY is linked. \r\n");
 #else
     delay(1000);
     delay(1000);
@@ -296,9 +321,7 @@ int main()
 	}
 #endif
 
-	display_Net_Info();
-
-	//atc_init(&rxring, &txring);
+	//display_Net_Info();
 
 	op_mode = OP_DATA;
 
@@ -306,7 +329,7 @@ int main()
 
 	ret = application_update();
 
-    printf("[DEBUG] check trigger:%d ret:%d \r\n", get_bootpin_Status(), ret);
+    //printf("[DEBUG] check trigger:%d ret:%d \r\n", get_bootpin_Status(), ret);
 	if((get_bootpin_Status() == 1) && (ret != TFTP_FAIL)) {
 		uint32_t tmp;
 
@@ -317,19 +340,15 @@ int main()
 #endif
 
 		if((tmp & 0xffffffff) != 0xffffffff) {
-		    printf("[DEBUG] application_jump\r\n");
+		    //printf("[DEBUG] application_jump\r\n");
+			// Copy the application code interrupt vector to 0x00000000
+			//printf("\r\n copy the interrupt vector, app area [0x%.8x] ==> boot", DEVICE_APP_MAIN_ADDR);
+			Copy_Interrupt_VectorTable(DEVICE_APP_MAIN_ADDR);
 			application_jump();
 		}
 	}
 
 	while (1) {
-		if(op_mode == OP_COMMAND) {			// Command Mode
-			atc_run();
-			sockwatch_run();
-		} else {							// DATA Mode
-			s2e_run(SOCK_DATA);
-		}
-
 		if(g_op_mode == NORMAL_MODE) {
 			do_udp_config(SOCK_CONFIG);
 		} else {
@@ -356,6 +375,39 @@ int main()
     return 0;
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+// Functions for Interrupt Vector Table Remap
+//////////////////////////////////////////////////////////////////////////////////
+void Copy_Interrupt_VectorTable(uint32_t start_addr)
+{
+	uint32_t i;
+	uint8_t flash_vector_area[SECT_SIZE];
+
+	for (i = 0x00; i < 0x08; i++)			flash_vector_area[i] = *(volatile uint8_t *)(0x00000000+i);
+	for (i = 0x08; i < 0xA8; i++) 			flash_vector_area[i] = *(volatile uint8_t *)(start_addr+i); // Actual address range; Interrupt vector table is located here
+	for (i = 0xA8; i < SECT_SIZE; i++)		flash_vector_area[i] = *(volatile uint8_t *)(0x00000000+i);
+
+	__disable_irq();
+	DO_IAP(IAP_ERAS_SECT, 0x00000000, 0, 0); 						// Erase the interrupt vector table area : Sector 0
+	DO_IAP(IAP_PROG, 0x00000000, flash_vector_area , SECT_SIZE);	// Write the application vector table to 0x00000000
+	__enable_irq();
+}
+
+void Backup_Boot_Interrupt_VectorTable(void)
+{
+	uint32_t i;
+	uint8_t flash_vector_area[SECT_SIZE];
+
+	for (i = 0; i < SECT_SIZE; i++)
+	{
+		flash_vector_area[i] = *(volatile uint8_t *)(0x00000000+i);
+	}
+
+	__disable_irq();
+	DO_IAP(IAP_PROG, BOOT_VEC_BACK_ADDR, flash_vector_area , SECT_SIZE);
+	__enable_irq();
+}
+
 /**
   * @brief  Inserts a delay time.
   * @param  nTime: specifies the delay time length, in milliseconds.
@@ -380,4 +432,3 @@ void TimingDelay_Decrement(void)
     TimingDelay--;
   }
 }
-

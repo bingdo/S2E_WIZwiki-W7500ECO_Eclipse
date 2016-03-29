@@ -225,7 +225,6 @@ void check_mac_address()
 
 	if(s2e_packet.network_info_common.mac[0] != 0x00 || s2e_packet.network_info_common.mac[1] != 0x08 || s2e_packet.network_info_common.mac[2] != 0xDC)
 	{
-#if 1
 		do{
 			myprintf("Input MAC ? ");
 
@@ -246,7 +245,7 @@ void check_mac_address()
 
 		set_S2E_Packet_to_factory_value();
 		save_S2E_Packet_to_storage();
-#endif
+
 		//Firmware_Upload_Info firmware_upload_info;
 		//memset(&firmware_upload_info, 0, sizeof(Firmware_Upload_Info));
 		//write_storage(0, &firmware_upload_info, sizeof(Firmware_Upload_Info));

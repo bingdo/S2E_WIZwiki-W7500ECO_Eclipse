@@ -159,6 +159,7 @@ void Chip_UART_IRQRBHandler(UART_TypeDef *pUART, RINGBUFF_T *pRXRB, RINGBUFF_T *
 	}
 }
 
+#if 0
 /**
  * @brief  UART0 Interrupt Handler
  * @param  None
@@ -187,6 +188,12 @@ void UART1_Handler(void)
 void UART2_Handler(void)
 {
 	Chip_UART_IRQRBHandler(UART2, &rxring, &txring);
+}
+#endif
+
+void S2E_UART_IRQ_Handler(UART_TypeDef * s2e_uart)
+{
+	Chip_UART_IRQRBHandler(s2e_uart, &rxring, &txring);
 }
 
 /**
