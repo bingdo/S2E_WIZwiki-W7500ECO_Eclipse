@@ -167,7 +167,7 @@ void atc_run(void)
 				//printf("<ENT>");
 				if(atci.echo) 
 					UART_write("\r\n", 2);
-				else delay_cnt(10000);
+				else delay(1);
 				termbuf[buflen] = 0;
 				break;
 			case 0x08:	// BS
@@ -177,14 +177,14 @@ void atc_run(void)
 					termbuf[buflen] = 0;
 					if(atci.echo) 
 						UART_write("\b \b", 3);
-					else delay_cnt(10000);
+					else delay(1);
 				}
 				break;
 			case 0x1b:	// ESC
 				//printf("<ESC>\r\n");
 				if(atci.echo) 
 					UART_write(&recv_char, 1);
-				else delay_cnt(10000);
+				else delay(1);
 				break;
 		}
 
@@ -193,7 +193,7 @@ void atc_run(void)
 	{
 		termbuf[buflen++] = (uint8_t)recv_char;	//termbuf[buflen] = 0;
 		if(atci.echo) UART_write(&recv_char, 1);
-		else delay_cnt(10000);
+		else delay(1);
 		//printf(" termbuf(%c, %s)\r\n", recv_char, termbuf);
 	}
 	//else { printf("input buffer stuffed\r\n"); }
@@ -925,6 +925,7 @@ static void hdl_mrst(void)
 	if(atci.tcmd.sign == CMD_SIGN_NONE) {
 		cmd_resp(RET_OK, VAL_NONE);
 		while(RingBuffer_GetCount(&txring) != 0);
+		delay(100);
 		NVIC_SystemReset();
 	} else RESP_CR(RET_WRONG_SIGN);
 }

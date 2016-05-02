@@ -235,6 +235,7 @@ int UART_read(void *data, int bytes)
 
 uint32_t UART_write(void *data, int bytes)
 {
+	delay(1);
 	return Chip_UART_SendRB(UART_DATA, &txring, data, bytes);
 }
 

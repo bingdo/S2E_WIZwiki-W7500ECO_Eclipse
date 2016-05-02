@@ -31,6 +31,8 @@ enum baud {
 };
 
 enum word_len {
+	word_len5 = 5,
+	word_len6 = 6,
 	word_len7 = 7,
 	word_len8 = 8,
 	word_len9 = 9
